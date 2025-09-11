@@ -2,19 +2,23 @@
 import { QuartzComponentConstructor, QuartzComponentProps } from "./types"
 import style from "./styles/frontmatterTable.scss"
 
-interface FieldDef { key: string; label?: string; render?: (v: unknown) => string }
+interface FieldDef {
+  key: string
+  label?: string
+  render?: (v: unknown, ctx: QuartzComponentProps)
+    => string | JSX.Element   // ← позволяем возвращать JSX
+}
 interface Options {
   title?: string
   fields: Array<string | FieldDef>
   hideEmpty?: boolean
 }
 
-const defaults: Options = { title: "Meta", fields: [], hideEmpty: true }
-
 export default ((userOpts?: Partial<Options>) => {
-  const opts: Options = { ...defaults, ...userOpts }
+  const opts: Options = { title: "Meta", fields: [], hideEmpty: true, ...userOpts }
 
-  function FrontmatterTable({ fileData }: QuartzComponentProps) {
+  function FrontmatterTable(props: QuartzComponentProps) {
+    const { fileData } = props
     const fm: Record<string, any> = fileData.frontmatter ?? {}
     const get = (path: string) =>
       path.split(".").reduce((acc, k) => (acc == null ? acc : acc[k]), fm)
@@ -22,14 +26,13 @@ export default ((userOpts?: Partial<Options>) => {
     const rows = opts.fields.map((f, i) => {
       const key   = (typeof f === "string") ? f : f.key
       const label = (typeof f === "string") ? f : (f.label ?? key)
-      const raw = get(key)
-
+      const raw   = get(key)
       const empty = (raw == null) || (raw === "") || (Array.isArray(raw) && raw.length === 0)
       if (empty && opts.hideEmpty) return null
 
       const val =
         ((typeof f !== "string") && f.render)
-          ? f.render(raw)
+          ? f.render(raw, props)                           // ← передаём контекст (cfg, fileData, displayClass,…)
           : (Array.isArray(raw) ? raw.join(", ") : String(raw))
 
       return (
