@@ -8,8 +8,8 @@ export const sharedPageComponents: SharedLayout = {
   afterBody: [],
   footer: Component.Footer({
     links: {
-      GitHub: "https://github.com/jackyzha0/quartz",
-      "Discord Community": "https://discord.gg/cRFFHYye7t",
+//      GitHub: "https://github.com/jackyzha0/quartz",
+//      "Discord Community": "https://discord.gg/cRFFHYye7t",
     },
   }),
 }
@@ -23,6 +23,20 @@ export const defaultContentPageLayout: PageLayout = {
     }),
     Component.ArticleTitle(),
     Component.ContentMeta(),
+    Component.FrontmatterTable({
+      // title: "Свойства",
+      fields: [
+        { key: "source", label: "Источник", render: (url)=><a href={url}>{url}</a> },
+        { key: "author", label: "Автор" },
+        { key: "status", label: "Статус" },
+        { key: "draft",  label: "Черновик" },
+        { key: "prev",   label: "Предыдущая страница" },
+        { key: "next",   label: "Следующая страница" },
+        "aliases",         // массивы аккуратно склеятся через запятую
+        "tags"             // можно и теги дублировать сверху
+        // поддерживаются вложенные ключи вида: "meta.editor.name"
+      ],
+    }),
     Component.TagList(),
   ],
   left: [
@@ -41,9 +55,9 @@ export const defaultContentPageLayout: PageLayout = {
     Component.Explorer(),
   ],
   right: [
-    Component.Graph(),
     Component.DesktopOnly(Component.TableOfContents()),
     Component.Backlinks(),
+    Component.Graph(),
   ],
 }
 

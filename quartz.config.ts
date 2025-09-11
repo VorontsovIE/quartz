@@ -8,16 +8,28 @@ import * as Plugin from "./quartz/plugins"
  */
 const config: QuartzConfig = {
   configuration: {
-    pageTitle: "Quartz 4",
+    pageTitle: "Ilya Vorontsov / Илья Воронцов",
     pageTitleSuffix: "",
     enableSPA: true,
     enablePopovers: true,
     analytics: {
-      provider: "plausible",
+      provider: 'plausible',
+      host: 'https://plausible.vorontsovie.ru'
     },
-    locale: "en-US",
-    baseUrl: "quartz.jzhao.xyz",
-    ignorePatterns: ["private", "templates", ".obsidian"],
+    locale: "ru-RU",
+    baseUrl: "vorontsovie.ru",
+    ignorePatterns: [
+/* 
+    "private",
+    "templates",
+    ".obsidian",
+    ".git",
+    "personal_notes",
+    "teaching_unsorted",
+    "chords",
+*/
+      "!(*.md|tg|Рекомендации и материалы|notes|размышления|clipped-from-web)/**",
+    ],
     defaultDateType: "modified",
     theme: {
       fontOrigin: "googleFonts",
@@ -59,6 +71,7 @@ const config: QuartzConfig = {
       Plugin.CreatedModifiedDate({
         priority: ["frontmatter", "git", "filesystem"],
       }),
+      Plugin.HardLineBreaks(),
       Plugin.SyntaxHighlighting({
         theme: {
           light: "github-light",
@@ -66,14 +79,17 @@ const config: QuartzConfig = {
         },
         keepBackground: false,
       }),
-      Plugin.ObsidianFlavoredMarkdown({ enableInHtmlEmbed: false }),
+      Plugin.ObsidianFlavoredMarkdown({ enableInHtmlEmbed: false, mermaid: false }),
       Plugin.GitHubFlavoredMarkdown(),
       Plugin.TableOfContents(),
-      Plugin.CrawlLinks({ markdownLinkResolution: "shortest" }),
+      Plugin.CrawlLinks({ markdownLinkResolution: "absolute", openLinksInNewTab: true }),
       Plugin.Description(),
       Plugin.Latex({ renderEngine: "katex" }),
     ],
-    filters: [Plugin.RemoveDrafts()],
+    filters: [
+      Plugin.ExplicitPublish(),
+      // Plugin.RemoveDrafts(),
+    ],
     emitters: [
       Plugin.AliasRedirects(),
       Plugin.ComponentResources(),
@@ -89,7 +105,7 @@ const config: QuartzConfig = {
       Plugin.Favicon(),
       Plugin.NotFoundPage(),
       // Comment out CustomOgImages to speed up build time
-      Plugin.CustomOgImages(),
+//      Plugin.CustomOgImages(),
     ],
   },
 }
