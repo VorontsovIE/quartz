@@ -17,7 +17,7 @@ const config: QuartzConfig = {
       host: 'https://plausible.vorontsovie.ru'
     },
     locale: "ru-RU",
-    baseUrl: "vorontsovie.ru",
+    baseUrl: "brain.vorontsovie.ru",
     ignorePatterns: [
 /* 
     "private",
