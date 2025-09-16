@@ -15,8 +15,6 @@ export const sharedPageComponents: SharedLayout = {
 }
 
 // components for pages that display a single page (e.g. a single note)
-const renderUrl = (url, { cfg }) => <a href={new URL(url, `https://${cfg.baseUrl}`)}>{url}</a>
-
 export const defaultContentPageLayout: PageLayout = {
   beforeBody: [
     Component.ConditionalRender({
@@ -28,12 +26,12 @@ export const defaultContentPageLayout: PageLayout = {
     Component.FrontmatterTable({
       title: "",
       fields: [
-        { key: "source", label: "Источник", render: renderUrl},
+        { key: "source", label: "Источник", isUrl: true},
         { key: "author", label: "Автор" },
         { key: "status", label: "Статус" },
         { key: "draft",  label: "Черновик" },
-        { key: "prev",   label: "Предыдущая страница", render: renderUrl },
-        { key: "next",   label: "Следующая страница", render: renderUrl },
+        { key: "prev",   label: "Предыдущая страница", isUrl: true },
+        { key: "next",   label: "Следующая страница", isUrl: true },
         // "aliases",         // массивы аккуратно склеятся через запятую
         // "tags"             // можно и теги дублировать сверху
         // поддерживаются вложенные ключи вида: "meta.editor.name"
@@ -59,7 +57,13 @@ export const defaultContentPageLayout: PageLayout = {
   right: [
     Component.DesktopOnly(Component.TableOfContents()),
     Component.Backlinks(),
-    Component.Graph(),
+    Component.Graph({
+      localGraph: {
+        depth: 3,
+        showTags: false,
+      },
+      globalGraph: {},
+    }),
   ],
 }
 

@@ -5,6 +5,7 @@ import style from "./styles/frontmatterTable.scss"
 interface FieldDef {
   key: string
   label?: string
+  isUrl?: boolean
   render?: (v: unknown, ctx: QuartzComponentProps)
     => string | JSX.Element   // ← позволяем возвращать JSX
 }
@@ -12,13 +13,14 @@ interface Options {
   title?: string
   fields: Array<string | FieldDef>
   hideEmpty?: boolean
+  baseUrl?: string
 }
 
 export default ((userOpts?: Partial<Options>) => {
   const opts: Options = { title: "Meta", fields: [], hideEmpty: true, ...userOpts }
 
   function FrontmatterTable(props: QuartzComponentProps) {
-    const { fileData } = props
+    const { fileData, cfg: {baseUrl} } = props
     const fm: Record<string, any> = fileData.frontmatter ?? {}
     const get = (path: string) =>
       path.split(".").reduce((acc, k) => (acc == null ? acc : acc[k]), fm)
@@ -30,10 +32,20 @@ export default ((userOpts?: Partial<Options>) => {
       const empty = (raw == null) || (raw === "") || (Array.isArray(raw) && raw.length === 0)
       if (empty && opts.hideEmpty) return null
 
-      const val =
-        ((typeof f !== "string") && f.render)
-          ? f.render(raw, props)                           // ← передаём контекст (cfg, fileData, displayClass,…)
-          : (Array.isArray(raw) ? raw.join(", ") : String(raw))
+      // someRenderer — is a more universal way that uses quartz config. But we don't need it now
+      // const someRenderer = (url, { cfg }) => <a href={new URL(url, `https://${cfg.baseUrl}`)}>{url}</a>
+      const linkByUrl = (url) => <a href={new URL(url, `https://${baseUrl}`)}>{url}</a>
+      const val = (()=>{
+        if ((typeof f !== "string") && f.render) {
+          return f.render(raw, props)  // passes context (cfg, fileData, displayClass, …)
+        } else if (Array.isArray(raw)) {
+            // return raw.map((val) => someRenderer(val, props)).join(", ")
+            return raw.map((val) => f.isUrl ? linkByUrl(val) : val).join(", ")
+        } else {
+          // return someRenderer(raw, props)
+          return f.isUrl ? linkByUrl(raw) : raw
+        }
+      })()
 
       return (
         <tr key={i}>

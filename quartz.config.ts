@@ -28,7 +28,8 @@ const config: QuartzConfig = {
     "teaching_unsorted",
     "chords",
 */
-      "!(*.md|tg|Рекомендации и материалы|notes|размышления|clipped-from-web)/**",
+      // "!(*.md|размышления)/**",
+      "!(*.md|tg|Рекомендации и материалы|notes|размышления|Проекты|clipped-from-web|files)/**",
     ],
     defaultDateType: "modified",
     theme: {
@@ -105,7 +106,7 @@ const config: QuartzConfig = {
       Plugin.Favicon(),
       Plugin.NotFoundPage(),
       // Comment out CustomOgImages to speed up build time
-      Plugin.CustomOgImages(),
+      // Plugin.CustomOgImages(),
     ],
   },
 }
