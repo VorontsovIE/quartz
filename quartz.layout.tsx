@@ -62,7 +62,10 @@ export const defaultContentPageLayout: PageLayout = {
         depth: 3,
         showTags: false,
       },
-      globalGraph: {},
+      globalGraph: {
+        showTags: false,
+        includeOrphans: false,
+      },
     }),
   ],
 }

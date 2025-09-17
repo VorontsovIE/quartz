@@ -87,6 +87,7 @@ async function renderGraph(graph: HTMLElement, fullSlug: FullSlug) {
     showTags,
     focusOnHover,
     enableRadial,
+    includeOrphans,
   } = JSON.parse(graph.dataset["cfg"]!) as D3Config
 
   const data: Map<SimpleSlug, ContentDetails> = new Map(
@@ -159,6 +160,15 @@ async function renderGraph(graph: HTMLElement, fullSlug: FullSlug) {
         source: nodes.find((n) => n.id === l.source)!,
         target: nodes.find((n) => n.id === l.target)!,
       })),
+  }
+
+  if (depth < 0 && includeOrphans === false) { // remove orphans in global graph
+    const used = new Set<string>()
+    for (const l of graphData.links) {
+      used.add(l.source.id)
+      used.add(l.target.id)
+    }
+    graphData.nodes = graphData.nodes.filter((n) => used.has(n.id))
   }
 
   const width = graph.offsetWidth
