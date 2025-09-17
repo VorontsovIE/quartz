@@ -32,6 +32,7 @@ export const defaultContentPageLayout: PageLayout = {
         { key: "draft",  label: "Черновик" },
         { key: "prev",   label: "Предыдущая страница", isUrl: true },
         { key: "next",   label: "Следующая страница", isUrl: true },
+        { key: "suggested_by",   label: "Предложено" },
         // "aliases",         // массивы аккуратно склеятся через запятую
         // "tags"             // можно и теги дублировать сверху
         // поддерживаются вложенные ключи вида: "meta.editor.name"
