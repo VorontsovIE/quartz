@@ -5,9 +5,28 @@ import * as Component from "./quartz/components"
 export const sharedPageComponents: SharedLayout = {
   head: Component.Head(),
   header: [],
-  afterBody: [],
+  afterBody: [
+    Component.Comments({
+      provider: 'giscus',
+      options: {
+        // from data-repo
+        repo: 'VorontsovIE/brain_giscus',
+        // from data-repo-id
+        repoId: 'R_kgDOPx99_w',
+        // from data-category
+        category: 'Announcements',
+        // from data-category-id
+        categoryId: 'DIC_kwDOPx99_84Cvk21',
+        // from data-lang
+        lang: 'ru',
+
+        mapping: 'pathname',
+      }
+    }),
+  ],
   footer: Component.Footer({
     links: {
+      "Telegram": "https://t.me/VorontsovIE",
 //      GitHub: "https://github.com/jackyzha0/quartz",
 //      "Discord Community": "https://discord.gg/cRFFHYye7t",
     },
@@ -33,6 +52,7 @@ export const defaultContentPageLayout: PageLayout = {
         { key: "prev",   label: "Предыдущая страница", isUrl: true },
         { key: "next",   label: "Следующая страница", isUrl: true },
         { key: "suggested_by",   label: "Предложено" },
+        { key: "forwarded_from",   label: "Репост из", isUrl: true },
         // "aliases",         // массивы аккуратно склеятся через запятую
         // "tags"             // можно и теги дублировать сверху
         // поддерживаются вложенные ключи вида: "meta.editor.name"
