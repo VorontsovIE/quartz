@@ -40,7 +40,12 @@ export default ((userOpts?: Partial<Options>) => {
           return f.render(raw, props)  // passes context (cfg, fileData, displayClass, …)
         } else if (Array.isArray(raw)) {
             // return raw.map((val) => someRenderer(val, props)).join(", ")
-            return raw.map((val) => f.isUrl ? linkByUrl(val) : val).join(", ")
+            return raw.map((val) => f.isUrl ? linkByUrl(val) : val).map((val, idx, arr) => {
+              return <>
+                {val}
+                { (idx < arr.length - 1) ?  ", " : null }
+              </>
+            })
         } else {
           // return someRenderer(raw, props)
           return f.isUrl ? linkByUrl(raw) : raw
