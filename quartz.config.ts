@@ -14,10 +14,10 @@ const config: QuartzConfig = {
     enablePopovers: true,
     analytics: {
       provider: 'plausible',
-      host: 'https://plausible.vorontsovie.ru'
+      host: 'https://plausible.vorontsovie.xyz'
     },
     locale: "ru-RU",
-    baseUrl: "brain.vorontsovie.ru",
+    baseUrl: "brain.vorontsovie.xyz",
     ignorePatterns: [
 /* 
     "private",
