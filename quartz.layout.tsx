@@ -96,8 +96,8 @@ export const defaultListPageLayout: PageLayout = {
   beforeBody: [Component.Breadcrumbs(), Component.ArticleTitle(), Component.ContentMeta()],
   left: [
     // Component.PageTitle(),
-    Component.DesktopOnly(Component.PageTitle({title: 'Ilya Vorontsov / Илья Воронцов'})),
-    Component.MobileOnly(Component.PageTitle({title: 'Илья Воронцов'})),
+    Component.DesktopOnly(Component.PageTitle({title: 'Ilya Vorontsov'})),
+    Component.MobileOnly(Component.PageTitle({title: 'Ilya Vorontsov'})),
     Component.MobileOnly(Component.Spacer()),
     Component.Flex({
       components: [
