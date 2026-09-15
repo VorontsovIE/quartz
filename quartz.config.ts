@@ -13,13 +13,13 @@ const config: QuartzConfig = {
     enableSPA: true,
     enablePopovers: true,
     analytics: {
-      provider: 'plausible',
-      host: 'https://plausible.vorontsovie.xyz'
+      provider: "plausible",
+      host: "https://plausible.vorontsovie.xyz",
     },
     locale: "ru-RU",
     baseUrl: "brain.vorontsovie.xyz",
     ignorePatterns: [
-/* 
+      /*
     "private",
     "templates",
     ".obsidian",
@@ -102,6 +102,7 @@ const config: QuartzConfig = {
         enableSiteMap: true,
         enableRSS: true,
       }),
+      Plugin.SearchDiscovery(),
       Plugin.Assets(),
       Plugin.Static(),
       Plugin.Favicon(),
