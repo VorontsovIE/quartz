@@ -31,6 +31,37 @@ export default (() => {
     const socialUrl =
       fileData.slug === "404" ? url.toString() : joinSegments(url.toString(), fileData.slug!)
 
+    const isArticle = fileData.slug !== "404" && fileData.relativePath !== undefined
+    const published = fileData.dates?.published ?? fileData.dates?.created
+    const modified = fileData.dates?.modified
+    const tags = fileData.frontmatter?.tags ?? []
+    const robots =
+      fileData.slug === "404"
+        ? "noindex, nofollow"
+        : "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1"
+    const structuredData = isArticle
+      ? {
+          "@context": "https://schema.org",
+          "@type": "BlogPosting",
+          headline: title,
+          description,
+          url: socialUrl,
+          mainEntityOfPage: {
+            "@type": "WebPage",
+            "@id": socialUrl,
+          },
+          inLanguage: fileData.frontmatter?.lang ?? cfg.locale,
+          ...(published && { datePublished: published.toISOString() }),
+          ...(modified && { dateModified: modified.toISOString() }),
+          ...(tags.length > 0 && { keywords: tags.join(", ") }),
+          author: {
+            "@type": "Person",
+            name: cfg.pageTitle,
+            url: url.toString(),
+          },
+        }
+      : undefined
+
     const usesCustomOgImage = ctx.cfg.plugins.emitters.some(
       (e) => e.name === CustomOgImagesEmitterName,
     )
@@ -55,7 +86,8 @@ export default (() => {
 
         <meta name="og:site_name" content={cfg.pageTitle}></meta>
         <meta property="og:title" content={title} />
-        <meta property="og:type" content="website" />
+        <meta property="og:type" content={isArticle ? "article" : "website"} />
+        <meta property="og:locale" content={cfg.locale.replace("-", "_")} />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content={title} />
         <meta name="twitter:description" content={description} />
@@ -76,15 +108,35 @@ export default (() => {
 
         {cfg.baseUrl && (
           <>
+            <link rel="canonical" href={socialUrl} />
             <meta property="twitter:domain" content={cfg.baseUrl}></meta>
             <meta property="og:url" content={socialUrl}></meta>
             <meta property="twitter:url" content={socialUrl}></meta>
           </>
         )}
 
+        {isArticle && published && (
+          <meta property="article:published_time" content={published.toISOString()} />
+        )}
+        {isArticle && modified && (
+          <meta property="article:modified_time" content={modified.toISOString()} />
+        )}
+        {isArticle && tags.map((tag) => <meta property="article:tag" content={tag} />)}
+
         <link rel="icon" href={iconPath} />
         <meta name="description" content={description} />
+        <meta name="author" content={cfg.pageTitle} />
+        <meta name="robots" content={robots} />
         <meta name="generator" content="Quartz" />
+
+        {structuredData && (
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{
+              __html: JSON.stringify(structuredData).replace(/</g, "\\u003c"),
+            }}
+          />
+        )}
 
         {css.map((resource) => CSSResourceToStyleElement(resource, true))}
         {js
