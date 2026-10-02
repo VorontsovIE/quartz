@@ -73,7 +73,7 @@ async function processTagPage(
   const slug = joinSegments("tags", tag) as FullSlug
   const [tree, file] = tagContent
   const cfg = ctx.cfg.configuration
-  const externalResources = pageResources(pathToRoot(slug), resources)
+  const externalResources = pageResources(pathToRoot(slug), resources, cfg.publishing.privateHost)
   const componentData: QuartzComponentProps = {
     ctx,
     fileData: file.data,
@@ -126,7 +126,13 @@ export const TagPage: QuartzEmitterPlugin<Partial<TagPageOptions>> = (userOpts) 
       const cfg = ctx.cfg.configuration
       const [tags, tagDescriptions] = computeTagInfo(allFiles, content, cfg.locale)
 
+      // Tags that also have public pages have their tag page in the public
+      // output (including the tag index); the overlay must not shadow them.
+      const suppressed =
+        ctx.buildMode === "private" ? (ctx.publicTags ?? new Set<string>()) : new Set<string>()
+
       for (const tag of tags) {
+        if (suppressed.has(tag)) continue
         yield processTagPage(ctx, tag, tagDescriptions[tag], allFiles, opts, resources)
       }
     },

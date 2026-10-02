@@ -48,6 +48,10 @@ export const SearchDiscovery: QuartzEmitterPlugin<Partial<Options>> = (userOpts)
   return {
     name: "SearchDiscovery",
     async *emit(ctx, content) {
+      // Search/llms/robots/indexnow discovery belongs to the public site only;
+      // the private overlay must not re-emit any of it.
+      if (ctx.buildMode !== "public") return
+
       const cfg = ctx.cfg.configuration
       if (!cfg.baseUrl) {
         throw new Error("SearchDiscovery requires configuration.baseUrl")

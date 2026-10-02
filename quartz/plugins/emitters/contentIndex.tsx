@@ -120,25 +120,6 @@ export const ContentIndex: QuartzEmitterPlugin<Partial<Options>> = (opts) => {
         }
       }
 
-      if (opts?.enableSiteMap) {
-        yield write({
-          ctx,
-          content: generateSiteMap(cfg, linkIndex),
-          slug: "sitemap" as FullSlug,
-          ext: ".xml",
-        })
-      }
-
-      if (opts?.enableRSS) {
-        yield write({
-          ctx,
-          content: generateRSSFeed(cfg, linkIndex, opts.rssLimit),
-          slug: (opts?.rssSlug ?? "index") as FullSlug,
-          ext: ".xml",
-        })
-      }
-
-      const fp = joinSegments("static", "contentIndex") as FullSlug
       const simplifiedIndex = Object.fromEntries(
         Array.from(linkIndex).map(([slug, content]) => {
           // remove description and from content index as nothing downstream
@@ -150,15 +131,45 @@ export const ContentIndex: QuartzEmitterPlugin<Partial<Options>> = (opts) => {
         }),
       )
 
-      yield write({
-        ctx,
-        content: JSON.stringify(simplifiedIndex),
-        slug: fp,
-        ext: ".json",
-      })
+      if (ctx.buildMode === "public") {
+        if (opts?.enableSiteMap) {
+          yield write({
+            ctx,
+            content: generateSiteMap(cfg, linkIndex),
+            slug: "sitemap" as FullSlug,
+            ext: ".xml",
+          })
+        }
+
+        if (opts?.enableRSS) {
+          yield write({
+            ctx,
+            content: generateRSSFeed(cfg, linkIndex, opts.rssLimit),
+            slug: (opts?.rssSlug ?? "index") as FullSlug,
+            ext: ".xml",
+          })
+        }
+
+        yield write({
+          ctx,
+          content: JSON.stringify(simplifiedIndex),
+          slug: joinSegments("static", "contentIndex") as FullSlug,
+          ext: ".json",
+        })
+      } else {
+        // Private overlay: only the private index, which the client on the
+        // private host merges with the public one. No public discovery
+        // artifacts (sitemap/RSS/contentIndex) may leak into the overlay.
+        yield write({
+          ctx,
+          content: JSON.stringify(simplifiedIndex),
+          slug: joinSegments("static", "privateContentIndex") as FullSlug,
+          ext: ".json",
+        })
+      }
     },
     externalResources: (ctx) => {
-      if (opts?.enableRSS) {
+      if (opts?.enableRSS && ctx.buildMode === "public") {
         return {
           additionalHead: [
             <link

@@ -2,11 +2,14 @@ import test, { describe } from "node:test"
 import assert from "node:assert"
 import {
   BUILD_MODE_ENV,
+  contentIndexFetchScript,
   classifyPage,
   collectPublicAggregates,
   folderPrefixesOf,
   getBuildMode,
   isInsideFolder,
+  privateAssetUrl,
+  shouldCopyAsset,
   tagPrefixesOf,
   type PublishPolicy,
 } from "./publish"
@@ -148,5 +151,39 @@ describe("aggregates", () => {
     assert.deepEqual([...aggregates.tags].sort(), ["index", "life", "music", "music/pop"])
     assert.ok(!aggregates.tags.has("diary"))
     assert.ok(!aggregates.folders.has("journal"))
+  })
+})
+
+describe("asset policy", () => {
+  test("assets in private folders go to the private output only", () => {
+    assert.equal(shouldCopyAsset("public", policy, "journal/scan.pdf"), false)
+    assert.equal(shouldCopyAsset("private", policy, "journal/scan.pdf"), true)
+    assert.equal(shouldCopyAsset("public", policy, "files/pic.png"), true)
+    assert.equal(shouldCopyAsset("private", policy, "files/pic.png"), false)
+  })
+
+  test("privateAssetUrl points at the private host", () => {
+    assert.equal(
+      privateAssetUrl(policy, "journal/scan.pdf"),
+      "https://hindbrain.vorontsovie.xyz/journal/scan.pdf",
+    )
+  })
+})
+
+describe("contentIndexFetchScript", () => {
+  test("loads the public index everywhere and merges the private index only on the private host", () => {
+    const script = contentIndexFetchScript(".", "hindbrain.vorontsovie.xyz")
+    assert.match(script, /fetch\("\.\/static\/contentIndex\.json"\)/)
+    assert.match(script, /fetch\("\.\/static\/privateContentIndex\.json"\)/)
+    assert.match(script, /location\.hostname === "hindbrain\.vorontsovie\.xyz"/)
+    const hostCheck = script.indexOf("location.hostname")
+    const privateFetch = script.indexOf("privateContentIndex.json")
+    assert.ok(hostCheck !== -1 && hostCheck < privateFetch)
+    assert.match(script, /\.\.\.data, \.\.\.privateData/)
+  })
+
+  test("uses the base dir for nested pages", () => {
+    const script = contentIndexFetchScript("../..", "hindbrain.vorontsovie.xyz")
+    assert.match(script, /fetch\("\.\.\/\.\.\/static\/contentIndex\.json"\)/)
   })
 })

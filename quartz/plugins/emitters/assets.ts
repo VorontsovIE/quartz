@@ -5,10 +5,13 @@ import fs from "fs"
 import { glob } from "../../util/glob"
 import { Argv } from "../../util/ctx"
 import { QuartzConfig } from "../../cfg"
+import { shouldCopyAsset, type PublishMode } from "../../util/publish"
 
-const filesToCopy = async (argv: Argv, cfg: QuartzConfig) => {
-  // glob all non MD files in content folder and copy it over
-  return await glob("**", argv.directory, ["**/*.md", ...cfg.configuration.ignorePatterns])
+const filesToCopy = async (argv: Argv, cfg: QuartzConfig, buildMode: PublishMode) => {
+  // glob all non MD files in content folder, keeping only the assets that
+  // belong to this build mode (public output never gets private-folder assets)
+  const fps = await glob("**", argv.directory, ["**/*.md", ...cfg.configuration.ignorePatterns])
+  return fps.filter((fp) => shouldCopyAsset(buildMode, cfg.configuration.publishing, fp))
 }
 
 const copyFile = async (argv: Argv, fp: FilePath) => {
@@ -28,8 +31,8 @@ const copyFile = async (argv: Argv, fp: FilePath) => {
 export const Assets: QuartzEmitterPlugin = () => {
   return {
     name: "Assets",
-    async *emit({ argv, cfg }) {
-      const fps = await filesToCopy(argv, cfg)
+    async *emit({ argv, cfg, buildMode }) {
+      const fps = await filesToCopy(argv, cfg, buildMode)
       for (const fp of fps) {
         yield copyFile(argv, fp)
       }
@@ -38,6 +41,10 @@ export const Assets: QuartzEmitterPlugin = () => {
       for (const changeEvent of changeEvents) {
         const ext = path.extname(changeEvent.path)
         if (ext === ".md") continue
+
+        if (!shouldCopyAsset(ctx.buildMode, ctx.cfg.configuration.publishing, changeEvent.path)) {
+          continue
+        }
 
         if (changeEvent.type === "add" || changeEvent.type === "change") {
           yield copyFile(ctx.argv, changeEvent.path)

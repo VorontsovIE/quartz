@@ -28,6 +28,10 @@ export const NotFoundPage: QuartzEmitterPlugin = () => {
       return [Head, Body, pageBody, Footer]
     },
     async *emit(ctx, _content, resources) {
+      // The public 404 page is served from the public output via the
+      // nginx fallback.
+      if (ctx.buildMode === "private") return
+
       const cfg = ctx.cfg.configuration
       const slug = "404" as FullSlug
 
@@ -40,7 +44,7 @@ export const NotFoundPage: QuartzEmitterPlugin = () => {
         description: notFound,
         frontmatter: { title: notFound, tags: [] },
       })
-      const externalResources = pageResources(path, resources)
+      const externalResources = pageResources(path, resources, cfg.publishing.privateHost)
       const componentData: QuartzComponentProps = {
         ctx,
         fileData: vfile.data,

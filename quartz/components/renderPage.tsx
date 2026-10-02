@@ -9,6 +9,7 @@ import { visit } from "unist-util-visit"
 import { Root, Element, ElementContent } from "hast"
 import { GlobalConfiguration } from "../cfg"
 import { i18n } from "../i18n"
+import { contentIndexFetchScript } from "../util/publish"
 
 interface RenderComponents {
   head: QuartzComponent
@@ -25,9 +26,11 @@ const headerRegex = new RegExp(/h[1-6]/)
 export function pageResources(
   baseDir: FullSlug | RelativeURL,
   staticResources: StaticResources,
+  privateHost: string,
 ): StaticResources {
-  const contentIndexPath = joinSegments(baseDir, "static/contentIndex.json")
-  const contentIndexScript = `const fetchData = fetch("${contentIndexPath}").then(data => data.json())`
+  // Every host loads the public index; only the private host additionally
+  // merges the private index served from the overlay (see util/publish.ts).
+  const contentIndexScript = contentIndexFetchScript(baseDir, privateHost)
 
   const resources: StaticResources = {
     css: [

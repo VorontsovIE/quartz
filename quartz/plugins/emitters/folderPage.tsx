@@ -38,7 +38,7 @@ async function* processFolderInfo(
     const slug = joinSegments(folder, "index") as FullSlug
     const [tree, file] = folderContent
     const cfg = ctx.cfg.configuration
-    const externalResources = pageResources(pathToRoot(slug), resources)
+    const externalResources = pageResources(pathToRoot(slug), resources, cfg.publishing.privateHost)
     const componentData: QuartzComponentProps = {
       ctx,
       fileData: file.data,
@@ -141,6 +141,14 @@ export const FolderPage: QuartzEmitterPlugin<Partial<FolderPageOptions>> = (user
             : []
         }),
       )
+
+      // Folders that also contain public pages have their folder page in the
+      // public output; the overlay must not shadow it on the private host.
+      if (ctx.buildMode === "private") {
+        for (const folder of ctx.publicFolders ?? []) {
+          folders.delete(folder as SimpleSlug)
+        }
+      }
 
       const folderInfo = computeFolderInfo(folders, content, cfg.locale)
       yield* processFolderInfo(ctx, folderInfo, allFiles, opts, resources)

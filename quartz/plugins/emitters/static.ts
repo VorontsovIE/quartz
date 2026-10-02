@@ -6,7 +6,11 @@ import { dirname } from "path"
 
 export const Static: QuartzEmitterPlugin = () => ({
   name: "Static",
-  async *emit({ argv, cfg }) {
+  async *emit({ argv, cfg, buildMode }) {
+    // Shared static resources stay in the public output; the private host
+    // falls back to it through nginx.
+    if (buildMode === "private") return
+
     const staticPath = joinSegments(QUARTZ, "static")
     const fps = await glob("**", staticPath, cfg.configuration.ignorePatterns)
     const outputStaticPath = joinSegments(argv.output, "static")

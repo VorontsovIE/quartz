@@ -95,6 +95,7 @@ const config: QuartzConfig = {
       Plugin.GitHubFlavoredMarkdown(),
       Plugin.TableOfContents(),
       Plugin.CrawlLinks({ markdownLinkResolution: "relative", openLinksInNewTab: true }),
+      Plugin.PrivateAssetPlaceholders(),
       Plugin.Description(),
       Plugin.Latex({ renderEngine: "katex" }),
     ],

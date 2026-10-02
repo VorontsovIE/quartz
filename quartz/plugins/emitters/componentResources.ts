@@ -248,6 +248,10 @@ export const ComponentResources: QuartzEmitterPlugin = () => {
   return {
     name: "ComponentResources",
     async *emit(ctx, _content, _resources) {
+      // CSS/JS bundles are shared with the public output via the nginx fallback;
+      // the overlay must not duplicate them.
+      if (ctx.buildMode === "private") return
+
       const cfg = ctx.cfg.configuration
       // component specific scripts and styles
       const componentResources = getComponentResources(ctx)
