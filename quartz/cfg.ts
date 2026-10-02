@@ -2,6 +2,7 @@ import { ValidDateType } from "./components/Date"
 import { QuartzComponent } from "./components/types"
 import { ValidLocale } from "./i18n"
 import { PluginTypes } from "./plugins/types"
+import { PublishPolicy } from "./util/publish"
 import { Theme } from "./util/theme"
 
 export type Analytics =
@@ -65,6 +66,11 @@ export interface GlobalConfiguration {
    *   Quartz will avoid using this as much as possible and use relative URLs most of the time
    */
   baseUrl?: string
+  /**
+   * Folder and frontmatter rules deciding which notes are published to the
+   * public site and which ones go to the private site.
+   */
+  publishing: PublishPolicy
   theme: Theme
   /**
    * Allow to translate the date in the language of your choice.

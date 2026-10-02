@@ -18,6 +18,16 @@ const config: QuartzConfig = {
     },
     locale: "ru-RU",
     baseUrl: "brain.vorontsovie.xyz",
+    publishing: {
+      // Host of the authenticated private site (must match the nginx virtual host).
+      privateHost: "hindbrain.vorontsovie.xyz",
+      // Folders whose notes are published to the public site by default.
+      autoPublishFolders: ["chords"],
+      // Paths under auto-publish folders whose notes additionally need publish: true.
+      autoPublishExceptions: [],
+      // Folders whose notes (and assets) are private by default.
+      privateFolders: [],
+    },
     ignorePatterns: [
       /*
     "private",
@@ -29,7 +39,7 @@ const config: QuartzConfig = {
     "chords",
 */
       // "!(*.md|размышления)/**",
-      "!(*.md|tg|Рекомендации и материалы|notes|размышления|Проекты|clipped-from-web|files)/**",
+      "!(*.md|tg|Рекомендации и материалы|notes|размышления|Проекты|clipped-from-web|files|chords)/**",
     ],
     defaultDateType: "modified",
     theme: {

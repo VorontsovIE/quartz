@@ -21,6 +21,7 @@ import { getStaticResourcesFromPlugins } from "./plugins"
 import { randomIdNonSecure } from "./util/random"
 import { ChangeEvent } from "./plugins/types"
 import { minimatch } from "minimatch"
+import { collectPublicAggregates, getBuildMode } from "./util/publish"
 
 type ContentMap = Map<
   FilePath,
@@ -43,10 +44,12 @@ type BuildData = {
 }
 
 async function buildQuartz(argv: Argv, mut: Mutex, clientRefresh: () => void) {
+  const buildMode = getBuildMode(process.env.QUARTZ_BUILD_MODE)
   const ctx: BuildCtx = {
     buildId: randomIdNonSecure(),
     argv,
     cfg,
+    buildMode,
     allSlugs: [],
     allFiles: [],
     incremental: false,
@@ -82,6 +85,14 @@ async function buildQuartz(argv: Argv, mut: Mutex, clientRefresh: () => void) {
   ctx.allSlugs = allFiles.map((fp) => slugifyFilePath(fp as FilePath))
 
   const parsedFiles = await parseMarkdown(ctx, filePaths)
+  if (buildMode === "private") {
+    const aggregates = collectPublicAggregates(
+      cfg.configuration.publishing,
+      parsedFiles.map(([, file]) => file.data),
+    )
+    ctx.publicFolders = aggregates.folders
+    ctx.publicTags = aggregates.tags
+  }
   const filteredContent = filterContent(ctx, parsedFiles)
 
   await emitContent(ctx, filteredContent)
@@ -251,6 +262,16 @@ async function rebuild(changes: ChangeEvent[], clientRefresh: () => void, buildD
   // update allFiles and then allSlugs with the consistent view of content map
   ctx.allFiles = Array.from(contentMap.keys())
   ctx.allSlugs = ctx.allFiles.map((fp) => slugifyFilePath(fp as FilePath))
+  if (ctx.buildMode === "private") {
+    const aggregates = collectPublicAggregates(
+      cfg.configuration.publishing,
+      Array.from(contentMap.values())
+        .filter((file) => file.type === "markdown")
+        .map((file) => file.content[1].data),
+    )
+    ctx.publicFolders = aggregates.folders
+    ctx.publicTags = aggregates.tags
+  }
   let processedFiles = filterContent(
     ctx,
     Array.from(contentMap.values())

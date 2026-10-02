@@ -179,6 +179,7 @@ export async function parseMarkdown(ctx: BuildCtx, fps: FilePath[]): Promise<Pro
     const serializableCtx: WorkerSerializableBuildCtx = {
       buildId: ctx.buildId,
       argv: ctx.argv,
+      buildMode: ctx.buildMode,
       allSlugs: ctx.allSlugs,
       allFiles: ctx.allFiles,
       incremental: ctx.incremental,
