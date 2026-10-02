@@ -16,3 +16,11 @@ Quartz v4 features a from-the-ground rewrite focusing on end-user extensibility 
     <img src="https://cdn.jsdelivr.net/gh/jackyzha0/jackyzha0/sponsorkit/sponsors.svg" />
   </a>
 </p>
+
+## This fork
+
+### Hard line breaks
+
+Single Markdown newlines render as hard line breaks (`<br>`) because
+`quartz.config.ts` enables `Plugin.HardLineBreaks()` (`remark-breaks`).
+Blank lines still separate paragraphs as usual.
