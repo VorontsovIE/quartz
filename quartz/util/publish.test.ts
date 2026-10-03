@@ -53,9 +53,9 @@ describe("isInsideFolder", () => {
 describe("classifyPage", () => {
   const fm = (values: Record<string, unknown>) => values
 
-  test("an ordinary page without flags is neither", () => {
-    assert.equal(classifyPage(policy, "notes/plain.md", undefined), "neither")
-    assert.equal(classifyPage(policy, "notes/plain.md", {}), "neither")
+  test("an ordinary page without flags is private", () => {
+    assert.equal(classifyPage(policy, "notes/plain.md", undefined), "private")
+    assert.equal(classifyPage(policy, "notes/plain.md", {}), "private")
   })
 
   test("publish: true makes a page public", () => {
@@ -89,8 +89,8 @@ describe("classifyPage", () => {
     assert.equal(classifyPage(policy, "chords/Pink Floyd/Welcome.md", undefined), "public")
   })
 
-  test("notes in exception subfolders require publish: true", () => {
-    assert.equal(classifyPage(policy, "chords/lessons/Am.md", undefined), "neither")
+  test("notes in exception subfolders are private without publish: true", () => {
+    assert.equal(classifyPage(policy, "chords/lessons/Am.md", undefined), "private")
     assert.equal(classifyPage(policy, "chords/lessons/Am.md", fm({ publish: true })), "public")
   })
 
@@ -99,8 +99,8 @@ describe("classifyPage", () => {
   })
 
   test("auto-publish folder matching stays on directory boundaries", () => {
-    assert.equal(classifyPage(policy, "chords-old/Am.md", undefined), "neither")
-    assert.equal(classifyPage(policy, "schords/Am.md", undefined), "neither")
+    assert.equal(classifyPage(policy, "chords-old/Am.md", undefined), "private")
+    assert.equal(classifyPage(policy, "schords/Am.md", undefined), "private")
   })
 
   test("notes in private folders are private by default", () => {

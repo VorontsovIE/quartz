@@ -16,7 +16,7 @@ export interface PublishPolicy {
   privateFolders: string[]
 }
 
-export type PublishDecision = "public" | "private" | "neither"
+export type PublishDecision = "public" | "private"
 
 export const BUILD_MODE_ENV = "QUARTZ_BUILD_MODE"
 
@@ -63,7 +63,7 @@ export function isInsideFolder(filePath: string, folder: string): boolean {
  *    (Beats the auto-publish folder policy unless `publish: true` is present.)
  * 4. `publish: true` -> public.
  * 5. Path inside an auto-publish folder and outside its exceptions -> public.
- * 6. Everything else -> neither public nor private.
+ * 6. Everything else -> private (the private site is the complete view).
  */
 export function classifyPage(
   policy: PublishPolicy,
@@ -88,7 +88,7 @@ export function classifyPage(
   if (inPrivateFolder) return publishTrue ? "public" : "private"
   if (publishTrue) return "public"
   if (inAutoPublishFolder && !inAutoPublishException) return "public"
-  return "neither"
+  return "private"
 }
 
 export interface PublicAggregates {

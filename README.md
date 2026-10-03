@@ -25,10 +25,11 @@ This fork publishes the Obsidian vault at `~/brain/` as two sites:
 - `hindbrain.vorontsovie.xyz` — an authenticated private site
   (`~/quartz/private`, nginx Basic Auth).
 
-The private host shows the public site plus the private pages: nginx serves
-the private overlay first and falls back to the public output for everything
-the overlay does not contain, so public pages and shared CSS/JS are stored
-once.
+The private host shows the complete vault: every note is published somewhere,
+public notes on both sites and everything else on the private site only.
+Nginx serves the private overlay first and falls back to the public output
+for everything the overlay does not contain, so public pages and shared
+CSS/JS are stored once.
 
 ### Hard line breaks
 
@@ -82,8 +83,8 @@ For a Markdown note, the first matching rule wins:
 4. `publish: true` — public.
 5. Path inside an `autoPublishFolders` path and outside any
    `autoPublishExceptions` path — public.
-6. Everything else — published nowhere (not on the public site, not on the
-   private site).
+6. Everything else — published on the private site only (never on the public
+   site).
 
 Both boolean and quoted-string values are recognized
 (`publish: true` and `publish: "true"`).
