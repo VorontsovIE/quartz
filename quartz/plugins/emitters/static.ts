@@ -6,13 +6,15 @@ import { dirname } from "path"
 
 export const Static: QuartzEmitterPlugin = () => ({
   name: "Static",
-  async *emit({ argv, cfg, buildMode }) {
+  async *emit({ argv, buildMode }) {
     // Shared static resources stay in the public output; the private host
     // falls back to it through nginx.
     if (buildMode === "private") return
 
     const staticPath = joinSegments(QUARTZ, "static")
-    const fps = await glob("**", staticPath, cfg.configuration.ignorePatterns)
+    // The content ignorePatterns describe the vault root and would wrongly
+    // filter the curated site assets here.
+    const fps = await glob("**", staticPath, [])
     const outputStaticPath = joinSegments(argv.output, "static")
     await fs.promises.mkdir(outputStaticPath, { recursive: true })
     for (const fp of fps) {
