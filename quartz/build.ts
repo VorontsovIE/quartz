@@ -12,7 +12,7 @@ import cfg from "../quartz.config"
 import { FilePath, joinSegments, slugifyFilePath } from "./util/path"
 import chokidar from "chokidar"
 import { ProcessedContent } from "./plugins/vfile"
-import { Argv, BuildCtx } from "./util/ctx"
+import { Argv, BuildCtx, trieFromAllFiles } from "./util/ctx"
 import { glob, toPosixPath } from "./util/glob"
 import { trace } from "./util/trace"
 import { options } from "./util/sourcemap"
@@ -21,7 +21,7 @@ import { getStaticResourcesFromPlugins } from "./plugins"
 import { randomIdNonSecure } from "./util/random"
 import { ChangeEvent } from "./plugins/types"
 import { minimatch } from "minimatch"
-import { collectPublicAggregates, getBuildMode } from "./util/publish"
+import { getBuildMode } from "./util/publish"
 
 type ContentMap = Map<
   FilePath,
@@ -85,13 +85,12 @@ async function buildQuartz(argv: Argv, mut: Mutex, clientRefresh: () => void) {
   ctx.allSlugs = allFiles.map((fp) => slugifyFilePath(fp as FilePath))
 
   const parsedFiles = await parseMarkdown(ctx, filePaths)
+  ctx.allContent = parsedFiles
   if (buildMode === "private") {
-    const aggregates = collectPublicAggregates(
-      cfg.configuration.publishing,
-      parsedFiles.map(([, file]) => file.data),
-    )
-    ctx.publicFolders = aggregates.folders
-    ctx.publicTags = aggregates.tags
+    // Folder and tag pages render through components that build a shared
+    // trie from the first data set they see; prime it with the full view so
+    // listings on the private host include public pages as well.
+    ctx.trie = trieFromAllFiles(parsedFiles.map(([, file]) => file.data))
   }
   const filteredContent = filterContent(ctx, parsedFiles)
 
@@ -262,22 +261,14 @@ async function rebuild(changes: ChangeEvent[], clientRefresh: () => void, buildD
   // update allFiles and then allSlugs with the consistent view of content map
   ctx.allFiles = Array.from(contentMap.keys())
   ctx.allSlugs = ctx.allFiles.map((fp) => slugifyFilePath(fp as FilePath))
+  const allContent = Array.from(contentMap.values())
+    .filter((file) => file.type === "markdown")
+    .map((file) => file.content)
+  ctx.allContent = allContent
   if (ctx.buildMode === "private") {
-    const aggregates = collectPublicAggregates(
-      cfg.configuration.publishing,
-      Array.from(contentMap.values())
-        .filter((file) => file.type === "markdown")
-        .map((file) => file.content[1].data),
-    )
-    ctx.publicFolders = aggregates.folders
-    ctx.publicTags = aggregates.tags
+    ctx.trie = trieFromAllFiles(allContent.map(([, file]) => file.data))
   }
-  let processedFiles = filterContent(
-    ctx,
-    Array.from(contentMap.values())
-      .filter((file) => file.type === "markdown")
-      .map((file) => file.content),
-  )
+  let processedFiles = filterContent(ctx, allContent)
 
   let emittedFiles = 0
   for (const emitter of cfg.plugins.emitters) {

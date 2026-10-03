@@ -1,4 +1,4 @@
-import { getAllSegmentPrefixes, joinSegments } from "./path"
+import { joinSegments } from "./path"
 
 export type PublishMode = "public" | "private"
 
@@ -89,62 +89,6 @@ export function classifyPage(
   if (publishTrue) return "public"
   if (inAutoPublishFolder && !inAutoPublishException) return "public"
   return "private"
-}
-
-export interface PublicAggregates {
-  folders: Set<string>
-  tags: Set<string>
-}
-
-/** The folder prefixes of a page slug, as used by the folder page emitter. */
-export function folderPrefixesOf(slug: string): string[] {
-  const prefixes: string[] = []
-  let folder = slug.includes("/") ? slug.slice(0, slug.lastIndexOf("/")) : ""
-  while (folder !== "" && folder !== ".") {
-    prefixes.push(folder)
-    folder = folder.includes("/") ? folder.slice(0, folder.lastIndexOf("/")) : ""
-  }
-  return prefixes
-}
-
-/** All hierarchical prefixes of the given tags (`a/b` -> `a`, `a/b`). */
-export function tagPrefixesOf(tags: string[] | undefined): string[] {
-  return (tags ?? []).flatMap((tag) => getAllSegmentPrefixes(tag))
-}
-
-export interface PublishableFile {
-  relativePath?: unknown
-  slug?: unknown
-  frontmatter?: unknown
-}
-
-/**
- * Folders and tags that have at least one public page, computed over the
- * full (unfiltered) file list. The private overlay build uses these to skip
- * aggregate pages (folder/tag pages) that would otherwise shadow the public
- * ones on the private host.
- */
-export function collectPublicAggregates(
-  policy: PublishPolicy,
-  files: PublishableFile[],
-): PublicAggregates {
-  const folders = new Set<string>()
-  const tags = new Set<string>()
-  for (const file of files) {
-    const relativePath = typeof file.relativePath === "string" ? file.relativePath : undefined
-    const slug = typeof file.slug === "string" ? file.slug : undefined
-    if (!relativePath || !slug) continue
-    const frontmatter = (
-      file.frontmatter && typeof file.frontmatter === "object" ? file.frontmatter : undefined
-    ) as Record<string, unknown> | undefined
-    if (classifyPage(policy, relativePath, frontmatter) !== "public") continue
-    for (const folder of folderPrefixesOf(slug)) folders.add(folder)
-    for (const tag of tagPrefixesOf(frontmatter?.tags as string[] | undefined)) tags.add(tag)
-  }
-  // The public build always emits the tag index page, so the overlay must
-  // never shadow it.
-  tags.add("index")
-  return { folders, tags }
 }
 
 /** Short neutral label shown on public pages instead of a private asset. */

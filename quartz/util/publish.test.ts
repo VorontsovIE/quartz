@@ -4,13 +4,10 @@ import {
   BUILD_MODE_ENV,
   contentIndexFetchScript,
   classifyPage,
-  collectPublicAggregates,
-  folderPrefixesOf,
   getBuildMode,
   isInsideFolder,
   privateAssetUrl,
   shouldCopyAsset,
-  tagPrefixesOf,
   type PublishPolicy,
 } from "./publish"
 
@@ -120,37 +117,6 @@ describe("classifyPage", () => {
     }
     assert.equal(classifyPage(both, "journal/2026-01-01.md", undefined), "private")
     assert.equal(classifyPage(both, "journal/2026-01-01.md", fm({ publish: true })), "public")
-  })
-})
-
-describe("aggregates", () => {
-  test("folderPrefixesOf mirrors folder page generation", () => {
-    assert.deepEqual(folderPrefixesOf("chords/Am"), ["chords"])
-    assert.deepEqual(folderPrefixesOf("a/b/c"), ["a/b", "a"])
-    assert.deepEqual(folderPrefixesOf("index"), [])
-  })
-
-  test("tagPrefixesOf expands nested tags", () => {
-    assert.deepEqual(tagPrefixesOf(["a/b", "c"]), ["a", "a/b", "c"])
-    assert.deepEqual(tagPrefixesOf(undefined), [])
-  })
-
-  test("collectPublicAggregates reports folders and tags of public pages only", () => {
-    const files = [
-      { relativePath: "chords/Am.md", slug: "chords/Am", frontmatter: { tags: ["music/pop"] } },
-      { relativePath: "notes/plain.md", slug: "notes/plain", frontmatter: {} },
-      {
-        relativePath: "notes/published.md",
-        slug: "notes/published",
-        frontmatter: { publish: true, tags: ["life"] },
-      },
-      { relativePath: "journal/diary.md", slug: "journal/diary", frontmatter: { tags: ["diary"] } },
-    ]
-    const aggregates = collectPublicAggregates(policy, files)
-    assert.deepEqual([...aggregates.folders].sort(), ["chords", "notes"])
-    assert.deepEqual([...aggregates.tags].sort(), ["index", "life", "music", "music/pop"])
-    assert.ok(!aggregates.tags.has("diary"))
-    assert.ok(!aggregates.folders.has("journal"))
   })
 })
 

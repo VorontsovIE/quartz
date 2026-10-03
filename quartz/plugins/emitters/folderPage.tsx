@@ -129,33 +129,34 @@ export const FolderPage: QuartzEmitterPlugin<Partial<FolderPageOptions>> = (user
       ]
     },
     async *emit(ctx, content, resources) {
-      const allFiles = content.map((c) => c[1].data)
       const cfg = ctx.cfg.configuration
+      const isPrivateBuild = ctx.buildMode === "private"
+      // The overlay renders folder pages from the full view so the private
+      // host lists public and private notes alike.
+      const fullContent = isPrivateBuild ? (ctx.allContent ?? content) : content
+      const allFiles = fullContent.map((c) => c[1].data)
+      // Only folders that contain private pages need an overlay copy; the
+      // rest are served from the public output through the nginx fallback.
+      const listingSource = isPrivateBuild ? content : fullContent
 
       const folders: Set<SimpleSlug> = new Set(
-        allFiles.flatMap((data) => {
-          return data.slug
-            ? _getFolders(data.slug).filter(
+        listingSource.flatMap(([_tree, file]) => {
+          return file.data.slug
+            ? _getFolders(file.data.slug).filter(
                 (folderName) => folderName !== "." && folderName !== "tags",
               )
             : []
         }),
       )
 
-      // Folders that also contain public pages have their folder page in the
-      // public output; the overlay must not shadow it on the private host.
-      if (ctx.buildMode === "private") {
-        for (const folder of ctx.publicFolders ?? []) {
-          folders.delete(folder as SimpleSlug)
-        }
-      }
-
-      const folderInfo = computeFolderInfo(folders, content, cfg.locale)
+      const folderInfo = computeFolderInfo(folders, fullContent, cfg.locale)
       yield* processFolderInfo(ctx, folderInfo, allFiles, opts, resources)
     },
     async *partialEmit(ctx, content, resources, changeEvents) {
-      const allFiles = content.map((c) => c[1].data)
       const cfg = ctx.cfg.configuration
+      const isPrivateBuild = ctx.buildMode === "private"
+      const fullContent = isPrivateBuild ? (ctx.allContent ?? content) : content
+      const allFiles = fullContent.map((c) => c[1].data)
 
       // Find all folders that need to be updated based on changed files
       const affectedFolders: Set<SimpleSlug> = new Set()
@@ -170,7 +171,7 @@ export const FolderPage: QuartzEmitterPlugin<Partial<FolderPageOptions>> = (user
 
       // If there are affected folders, rebuild their pages
       if (affectedFolders.size > 0) {
-        const folderInfo = computeFolderInfo(affectedFolders, content, cfg.locale)
+        const folderInfo = computeFolderInfo(affectedFolders, fullContent, cfg.locale)
         yield* processFolderInfo(ctx, folderInfo, allFiles, opts, resources)
       }
     },

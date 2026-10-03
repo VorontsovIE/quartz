@@ -122,23 +122,47 @@ export const TagPage: QuartzEmitterPlugin<Partial<TagPageOptions>> = (userOpts) 
       ]
     },
     async *emit(ctx, content, resources) {
-      const allFiles = content.map((c) => c[1].data)
       const cfg = ctx.cfg.configuration
-      const [tags, tagDescriptions] = computeTagInfo(allFiles, content, cfg.locale)
+      const isPrivateBuild = ctx.buildMode === "private"
+      // The overlay renders tag pages from the full view so the private host
+      // lists public and private notes alike. Only tags that contain private
+      // notes are emitted; the rest are served from the public output through
+      // the nginx fallback.
+      const fullContent = isPrivateBuild ? (ctx.allContent ?? content) : content
+      const allFiles = fullContent.map((c) => c[1].data)
+      const [tags, tagDescriptions] = computeTagInfo(allFiles, fullContent, cfg.locale)
 
-      // Tags that also have public pages have their tag page in the public
-      // output (including the tag index); the overlay must not shadow them.
-      const suppressed =
-        ctx.buildMode === "private" ? (ctx.publicTags ?? new Set<string>()) : new Set<string>()
+      let privateTags: Set<string> | undefined
+      if (isPrivateBuild) {
+        privateTags = new Set(
+          content.flatMap(([, file]) =>
+            (file.data.frontmatter?.tags ?? []).flatMap(getAllSegmentPrefixes),
+          ),
+        )
+      }
 
       for (const tag of tags) {
-        if (suppressed.has(tag)) continue
+        if (privateTags) {
+          if (tag === "index" && privateTags.size === 0) continue
+          if (tag !== "index" && !privateTags.has(tag)) continue
+        }
         yield processTagPage(ctx, tag, tagDescriptions[tag], allFiles, opts, resources)
       }
     },
     async *partialEmit(ctx, content, resources, changeEvents) {
-      const allFiles = content.map((c) => c[1].data)
       const cfg = ctx.cfg.configuration
+      const isPrivateBuild = ctx.buildMode === "private"
+      const fullContent = isPrivateBuild ? (ctx.allContent ?? content) : content
+      const allFiles = fullContent.map((c) => c[1].data)
+
+      let privateTags: Set<string> | undefined
+      if (isPrivateBuild) {
+        privateTags = new Set(
+          content.flatMap(([, file]) =>
+            (file.data.frontmatter?.tags ?? []).flatMap(getAllSegmentPrefixes),
+          ),
+        )
+      }
 
       // Find all tags that need to be updated based on changed files
       const affectedTags: Set<string> = new Set()
@@ -163,9 +187,13 @@ export const TagPage: QuartzEmitterPlugin<Partial<TagPageOptions>> = (userOpts) 
       // If there are affected tags, rebuild their pages
       if (affectedTags.size > 0) {
         // We still need to compute all tags because tag pages show all tags
-        const [_tags, tagDescriptions] = computeTagInfo(allFiles, content, cfg.locale)
+        const [_tags, tagDescriptions] = computeTagInfo(allFiles, fullContent, cfg.locale)
 
         for (const tag of affectedTags) {
+          if (privateTags) {
+            if (tag === "index" && privateTags.size === 0) continue
+            if (tag !== "index" && !privateTags.has(tag)) continue
+          }
           if (tagDescriptions[tag]) {
             yield processTagPage(ctx, tag, tagDescriptions[tag], allFiles, opts, resources)
           }

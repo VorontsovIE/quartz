@@ -1,5 +1,5 @@
 import { QuartzConfig } from "../cfg"
-import { QuartzPluginData } from "../plugins/vfile"
+import { ProcessedContent, QuartzPluginData } from "../plugins/vfile"
 import { FileTrieNode } from "./fileTrie"
 import { FilePath, FullSlug } from "./path"
 import { PublishMode } from "./publish"
@@ -31,12 +31,10 @@ export interface BuildCtx {
   /** Which site this build produces: the public site or the private overlay. */
   buildMode: PublishMode
   /**
-   * Folders and tags that have public pages (computed for private builds).
-   * The overlay must not emit aggregate pages for these, because the public
-   * copies exist and must win on the private host.
+   * The full, unfiltered parse result. Private builds render folder and tag
+   * pages from it so the overlay lists public and private content alike.
    */
-  publicFolders?: Set<string>
-  publicTags?: Set<string>
+  allContent?: ProcessedContent[]
   trie?: FileTrieNode<BuildTimeTrieData>
   incremental: boolean
 }
@@ -57,4 +55,4 @@ export function trieFromAllFiles(allFiles: QuartzPluginData[]): FileTrieNode<Bui
   return trie
 }
 
-export type WorkerSerializableBuildCtx = Omit<BuildCtx, "cfg" | "trie">
+export type WorkerSerializableBuildCtx = Omit<BuildCtx, "cfg" | "trie" | "allContent">
