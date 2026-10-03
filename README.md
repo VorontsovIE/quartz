@@ -147,10 +147,14 @@ One-time server steps:
    `sudo cp ~/nginx-brain.conf /etc/nginx/conf.d/brain.conf` (adjust the path
    to match how the existing public site is installed),
    `sudo nginx -t && sudo systemctl reload nginx`.
-3. Create the credentials (do **not** commit the file):
-   `sudo apt install apache2-utils`, then
-   `sudo htpasswd -c /etc/nginx/.htpasswd-hindbrain <user>` and
-   `sudo chmod 640 /etc/nginx/.htpasswd-hindbrain`.
+3. Create the credentials (do **not** commit the file). Nginx has no tool of
+   its own for this — the file is in the classic `htpasswd` format, which
+   the preinstalled `openssl` can produce without extra packages:
+   `echo '<user>:$(openssl passwd -apr1 "<password>")' | sudo tee /etc/nginx/.htpasswd-hindbrain`,
+   then `sudo chmod 640 /etc/nginx/.htpasswd-hindbrain`. Nginx accepts
+   classic crypt, MD5 (`$1$`), SHA-256 (`$5$`), and SHA-512 (`$6$`) hashes,
+   not bcrypt/argon2. Alternative with an interactive prompt:
+   `sudo apt install apache2-utils && sudo htpasswd -c /etc/nginx/.htpasswd-hindbrain <user>`.
 4. TLS: obtain certificates for both hosts (e.g.
    `sudo certbot --nginx -d brain.vorontsovie.xyz -d hindbrain.vorontsovie.xyz`),
    which adds `listen 443 ssl` server blocks; then add an HTTP→HTTPS
