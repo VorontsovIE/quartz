@@ -150,7 +150,7 @@ One-time server steps:
 3. Create the credentials (do **not** commit the file). Nginx has no tool of
    its own for this — the file is in the classic `htpasswd` format, which
    the preinstalled `openssl` can produce without extra packages:
-   `echo '<user>:$(openssl passwd -apr1 "<password>")' | sudo tee /etc/nginx/.htpasswd-hindbrain`,
+   `echo "<user>:$(openssl passwd -apr1 '<password>)" | sudo tee /etc/nginx/.htpasswd-hindbrain`,
    then `sudo chmod 640 /etc/nginx/.htpasswd-hindbrain`. Nginx accepts
    classic crypt, MD5 (`$1$`), SHA-256 (`$5$`), and SHA-512 (`$6$`) hashes,
    not bcrypt/argon2. Alternative with an interactive prompt:
@@ -178,8 +178,9 @@ requests the private index.
 - The private host is marked `noindex, nofollow` and emits no sitemap/RSS,
   but the placeholder links on public pages disclose the path of a private
   asset on the private host (not its content).
-- A folder containing both public and private notes shows the _public_
-  folder page on the private host (the overlay does not shadow it); the
-  private notes in that folder are reachable by direct link and via search.
+- Folders and tags that contain private notes get their own overlay page,
+  rendered from the full view, so on the private host they list public and
+  private notes alike. Purely public folders and tags keep the single public
+  page, served through the nginx fallback.
 - The search merge happens on full page load; SPA navigation keeps the index
   of the initially loaded page.
