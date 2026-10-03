@@ -1,12 +1,17 @@
 import { QuartzTransformerPlugin } from "../types"
 import {
+  FilePath,
   FullSlug,
   RelativeURL,
   SimpleSlug,
   TransformOptions,
+  isFolderPath,
+  joinSegments,
+  pathToRoot,
   stripSlashes,
   simplifySlug,
   splitAnchor,
+  slugifyFilePath,
   transformLink,
 } from "../../util/path"
 import path from "path"
@@ -32,11 +37,65 @@ const defaultOptions: Options = {
   externalLinkIcon: true,
 }
 
+export interface ResolvedVaultDest {
+  /** Vault-root-relative path of the target (slug for pages, raw path for assets). */
+  path: FullSlug
+  /** Anchor with a leading `#`, or empty. */
+  anchor: string
+}
+
+/**
+ * Resolves a vault-root-relative link (Obsidian shortest-path style, e.g.
+ * `[[tg/schroedinger_jokes/42]]`) against the full vault: pages, assets,
+ * and folders. Returns null for links that are already page-relative
+ * (`..` segments) or that do not resolve, so they keep the strategy
+ * behavior.
+ */
+export function resolveVaultDest(
+  dest: string,
+  pageSlugs: Set<FullSlug>,
+  folderSlugs: Set<string>,
+): ResolvedVaultDest | null {
+  const [rawDest, anchor] = splitAnchor(decodeURI(dest))
+  if (rawDest.split("/").some((segment) => segment === "..")) {
+    return null
+  }
+  const normalized = stripSlashes(rawDest.replace(/^\.\//, ""))
+  if (normalized === "") {
+    return null
+  }
+  const slug = slugifyFilePath(normalized as FilePath)
+  if (pageSlugs.has(slug)) {
+    return { path: slug, anchor }
+  }
+  if (folderSlugs.has(slug)) {
+    return { path: (slug + "/") as FullSlug, anchor }
+  }
+  const base = slug.split("/").pop()!
+  const basenameMatches = [...pageSlugs].filter((candidate) => {
+    const fileName = candidate.split("/").pop()!
+    return fileName === base
+  })
+  if (basenameMatches.length === 1) {
+    return { path: basenameMatches[0], anchor }
+  }
+  return null
+}
+
 export const CrawlLinks: QuartzTransformerPlugin<Partial<Options>> = (userOpts) => {
   const opts = { ...defaultOptions, ...userOpts }
   return {
     name: "LinkProcessing",
     htmlPlugins(ctx) {
+      const pageSlugs = new Set<FullSlug>(ctx.allSlugs)
+      const folderSlugs = new Set<string>()
+      for (const slug of ctx.allSlugs) {
+        let prefix = ""
+        for (const segment of slug.split("/").slice(0, -1)) {
+          prefix = prefix ? `${prefix}/${segment}` : segment
+          folderSlugs.add(prefix)
+        }
+      }
       return [
         () => {
           return (tree: Root, file) => {
@@ -46,6 +105,17 @@ export const CrawlLinks: QuartzTransformerPlugin<Partial<Options>> = (userOpts) 
             const transformOptions: TransformOptions = {
               strategy: opts.markdownLinkResolution,
               allSlugs: ctx.allSlugs,
+            }
+
+            const rebase = (slug: FullSlug, rawDest: string): RelativeURL => {
+              const resolved = resolveVaultDest(rawDest, pageSlugs, folderSlugs)
+              if (!resolved) {
+                return transformLink(slug, rawDest, transformOptions)
+              }
+              const tail = isFolderPath(resolved.path) ? "/" : ""
+              return (joinSegments(pathToRoot(slug), resolved.path) +
+                tail +
+                resolved.anchor) as RelativeURL
             }
 
             visit(tree, "element", (node, _index, _parent) => {
@@ -101,11 +171,7 @@ export const CrawlLinks: QuartzTransformerPlugin<Partial<Options>> = (userOpts) 
                 // don't process external links or intra-document anchors
                 const isInternal = !(isAbsoluteUrl(dest) || dest.startsWith("#"))
                 if (isInternal) {
-                  dest = node.properties.href = transformLink(
-                    file.data.slug!,
-                    dest,
-                    transformOptions,
-                  )
+                  dest = node.properties.href = rebase(file.data.slug!, dest)
 
                   // url.resolve is considered legacy
                   // WHATWG equivalent https://nodejs.dev/en/api/v18/url/#urlresolvefrom-to
@@ -146,13 +212,8 @@ export const CrawlLinks: QuartzTransformerPlugin<Partial<Options>> = (userOpts) 
                 }
 
                 if (!isAbsoluteUrl(node.properties.src)) {
-                  let dest = node.properties.src as RelativeURL
-                  dest = node.properties.src = transformLink(
-                    file.data.slug!,
-                    dest,
-                    transformOptions,
-                  )
-                  node.properties.src = dest
+                  const dest = node.properties.src as RelativeURL
+                  node.properties.src = rebase(file.data.slug!, dest)
                 }
               }
             })
